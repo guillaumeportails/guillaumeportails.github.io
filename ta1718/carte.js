@@ -1,7 +1,7 @@
 // nztopomaps:
-//      Sur Z=5..9, c'est une photo d'assemblage de cartes => lÃ©gende illisible (trop petit)
-//      Les Z=10,11,12 ont le meme detail, le 10 est illisible (lÃ©gende minuscule)
-//      Les Z=13,14,15 ont le meme detail, le 13 est illisible (lÃ©gende minuscule)
+//      Sur Z=5..9, c'est une photo d'assemblage de cartes => légende illisible (trop petit)
+//      Les Z=10,11,12 ont le meme detail, le 10 est illisible (légende minuscule)
+//      Les Z=13,14,15 ont le meme detail, le 13 est illisible (légende minuscule)
 //      Il vaut mieux alors utiliser OTM a ces Z.
 //
 // LINZ Data Service    https://data.linz.govt.nz/layer/767-nz-topo50-maps/webservices/
@@ -9,9 +9,9 @@
 //		+ 'b0542c447ceb4901a8363b54f2441727'
 //		+ '/tiles/v4/layer=xxx/EPSG:3857/{z}/{x}/{y}.png';
 //    layer 2343 : NZ Topo50  gridless   details constants 1cm=500m
-//                 valable pour Z=13..14 lÃ©gendes et routes illisibles a Z<=12
+//                 valable pour Z=13..14 légendes et routes illisibles a Z<=12
 //    layer 2324 : NZ Topo250 gridless   details constant 1cm=2500m
-//                 valable pour Z=10..12 lÃ©gendes et routes illisibles a Z<=9, limite pour 10
+//                 valable pour Z=10..12 légendes et routes illisibles a Z<=9, limite pour 10
 //
 // Meilleure carte de Nouvelle-Zelande selon Z :
 //  <=8   OTM
@@ -151,10 +151,10 @@ var overlays = {
 };
 
 
-const CEN = [-41.228249, 174.484863];
-const CDG = [49.023433, 2.565565];
-const AKL = [-37.01184, 174.786966];
+const CDG = [ 49.023433, 2.565565];
+const AKL = [-37.011840, 174.786966];
 const INV = [-46.418097, 168.30338];
+const CEN = [-41.228249, 174.484863];
 
 
 var map = new L.Map('eltmap', {
@@ -307,9 +307,11 @@ function createCORSRequest(method, url) {
 function loadInfos() {
   if (zanim) { clearInterval(zanim); zanim = null; }
   
-//new L.circle(CEN, {radius: 20000}).bindPopup("Circle").addTo(map);
-  new L.polyline([CDG,AKL], {color:'#A8A8A8', weight:1 }).addTo(map);
-  new L.polyline([INV,CDG], {color:'#A8A8A8', weight:1 }).addTo(map);
+  const s = {radius: 100000.0, color:'#A8A8A8', weight:1};
+  new L.circle([-CDG[0], CDG[1]+180], s).bindPopup("CDG Antipode").addTo(map);
+  new L.circle([-INV[0], INV[1]-180], s).bindPopup("Invercargill Antipode").addTo(map);
+  new L.polyline([CDG,AKL], {color:'#A8A8A8', weight:1}).addTo(map);
+  new L.polyline([INV,CDG], {color:'#A8A8A8', weight:1}).addTo(map);
 
   addGpx("TeAraroaTrail.gpx", 		"<P>Official Te Araroa</p><p>2016/17 (v35)</p>");
 
@@ -349,36 +351,25 @@ function loadInfos() {
   console.log("download ajax");
   $.ajax({
     type: 'GET',
-    url: inreachfeed,
+    url: 'http://query.yahooapis.com/v1/public/'
+	     + encodeURI('yql?q=select * from xml where url="' + inreachfeed + '"'),
 
-    // The 'contentType' property sets the 'Content-Type' header.
-    // The JQuery default for this property is
-    // 'application/x-www-form-urlencoded; charset=UTF-8', which does not trigger
-    // a preflight. If you set this value to anything other than
-    // application/x-www-form-urlencoded, multipart/form-data, or text/plain,
-    // you will trigger a preflight request.
-    contentType: 'text/plain',
+	dataType: 'xml',
+	contentType: 'text/plain',
+	xhrFields: { withCredentials: true  },
+	headers: { },
 
-    xhrFields: { withCredentials: true  },
-
-    headers: { },
-
-    success: function() { console.log("success"); },
-    error:   function() { console.log("error"); },
+	success: function(data, textstatus, xhdr) {
+		console.log("ajax " + data + " " + textstatus);
+		omnivore.kml.parse(data).bindPopup('Inreach Feed',
+				null,
+				L.geoJson(null, {
+					filter: function(f) { return (f.geometry.type == "LineString"); },
+					style:  function(f) { return { color: 'green'}; }})
+		).addTo(map); },
+	error:   function() { console.log("ajax error"); },
   });
 
-/***
-  console.log("download YQL");
-  function GetMessagesCB(data) { console.debug("downloaded !\n" + data); }
-  $.getJSON("http://query.yahooapis.com/v1/public/yql",
-    {  q:      'select * from xml where url="' + inreachfeed + '"',
-       format: 'xml' },
-    function (data) {
-      if (data.query.results) { GetMessagesCB(data.query.results.json); }
-	  else { console.log('bad'); }
-    }
-  );
-***/
 }
 
 
