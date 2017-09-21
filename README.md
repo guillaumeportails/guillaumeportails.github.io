@@ -1,4 +1,4 @@
 # guillaumeportails.github.io
 Test and Demo
 
-Copy of some other projects to test them
+Copy of some projects to test them
