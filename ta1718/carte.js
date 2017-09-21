@@ -351,7 +351,7 @@ function loadInfos() {
   console.log("download ajax");
   $.ajax({
     type: 'GET',
-    url: 'http://query.yahooapis.com/v1/public/'
+    url: 'https://query.yahooapis.com/v1/public/'
 	     + encodeURI('yql?q=select * from xml where url="' + inreachfeed + '"'),
 
 	dataType: 'xml',
