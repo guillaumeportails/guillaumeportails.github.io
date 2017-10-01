@@ -7,15 +7,16 @@
 	<meta name="description" content="Carte Leaflet NZ Topo50&al. + GEOJSONs predefinis" />
 	<link rel="stylesheet" type="text/css" href="flex.css" />
 
+	<link href="jflickrfeed/style.css" rel="stylesheet" type="text/css" media="all" /> 
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
+	<script src="jflickrfeed/jflickrfeed.js"></script>
+
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
 	<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
-	<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
+	<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.js'></script>
 	<script src="leaflet.filelayer.js"></script>
-	<script src="download.min.js"></script>
+	<script src="togeojson.js"></script>   <!-- patch de omnivore: le 0.3.1 de api.mapbox.com n'a pas TimeStamp -->
 
-	<link href="jflickrfeed/style.css" rel="stylesheet" type="text/css" media="all" /> 
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
-	<script src="jflickrfeed/jflickrfeed.min.js"></script>
 </head>
 
 <body>

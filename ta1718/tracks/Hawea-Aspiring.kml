@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>Hawea-Aspiring.kml</name>
+	<Placemark>
+		<name>Road link hitch (Hawea - Makarora)</name>
+		<LineString>
+			<coordinates>
+			169.2465980420888,-44.60461628685941 169.2528780706575,-44.59063947395837 169.2363668191892,-44.55849638054127 169.2505071022906,-44.51818691381949 169.2455039148186,-44.45820492222507 169.1846125074738,-44.43316814197082 169.1876249570173,-44.38715099424113 169.1687530163778,-44.35311510974739 169.1957724311851,-44.30648706421876 169.2016327924662,-44.26846760725883 169.2518551363827,-44.19524609060021 169.2775674923527,-44.16453267079965 
+			</coordinates>
+		</LineString>
+	</Placemark>
+</Document>
+</kml>

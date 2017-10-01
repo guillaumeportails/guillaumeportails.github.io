@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
+<Document>
+	<name>Coromandel-Kaimai.kml</name>
+	<StyleMap id="m_ylw-pushpin">
+		<Pair>
+			<key>normal</key>
+			<styleUrl>#s_ylw-pushpin</styleUrl>
+		</Pair>
+		<Pair>
+			<key>highlight</key>
+			<styleUrl>#s_ylw-pushpin_hl</styleUrl>
+		</Pair>
+	</StyleMap>
+	<Style id="s_ylw-pushpin">
+		<IconStyle>
+			<scale>1.1</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+	</Style>
+	<Style id="s_ylw-pushpin_hl">
+		<IconStyle>
+			<scale>1.3</scale>
+			<Icon>
+				<href>http://maps.google.com/mapfiles/kml/pushpin/ylw-pushpin.png</href>
+			</Icon>
+			<hotSpot x="20" y="2" xunits="pixels" yunits="pixels"/>
+		</IconStyle>
+	</Style>
+	<Folder>
+		<name>foo</name>
+		<open>1</open>
+		<Placemark>
+			<name>Sans titre - Trajet</name>
+			<styleUrl>#m_ylw-pushpin</styleUrl>
+			<LineString>
+				<tessellate>1</tessellate>
+				<coordinates>
+					175.7384300649892,-37.14062720529253,0 175.7355858678635,-37.14439253156242,0 175.7262451662633,-37.14562394377129,0 175.7200390664558,-37.14920227901774,0 175.6976947509484,-37.15157981229692,0 175.6911699917148,-37.15528777635648,0 175.6650390646305,-37.14447681149504,0 175.6483558589993,-37.14534017205896,0 175.6456824228565,-37.15150221613391,0 175.629216409831,-37.1595489237932,0 175.6190290965579,-37.15550351291687,0 175.5833874921623,-37.17878185465239,0 175.5738740516066,-37.1898104483571,0 175.6075789741956,-37.20801879368811,0 175.620184807452,-37.21262835702468,0 175.6399899054336,-37.23184243638203,0 175.6392917818596,-37.23720815658148,0 175.6571349795867,-37.25557824041186,0 175.6509394533518,-37.28733847298403,0 175.6595501921282,-37.301270201321,0 175.6777101520297,-37.31872125095505,0 175.675323019818,-37.33333133388967,0 175.6798336409912,-37.34920530432002,0 175.6778350804093,-37.35328389367297,0 175.681696680629,-37.35803200931468,0 175.681404214849,-37.37038357527069,0 175.6737458260905,-37.38144273984155,0 175.7005885287369,-37.40219706626282,0 175.7082534558294,-37.40409284952607,0 175.7066135780755,-37.41115851827682,0 175.7228782743595,-37.42228668540592,0 
+				</coordinates>
+			</LineString>
+		</Placemark>
+	</Folder>
+</Document>
+</kml>
