@@ -3,16 +3,10 @@ $(document).ready(function(){
     const ID = '50411456@N07';
 	console.log('on.ready  tags="' + document.getElementById("flickrfeed").tagSelected + '"');
 	
-	// https://www.flickr.com/services/api/misc.dates.html    ou presque
 	function shorten(s) {
 		return s.substr(0,10) + ' ' + s.substr(11,5);
 	}
 	
-	// https://www.flickr.com/services/api/misc.urls.html
-//	function webpage(s) {
-//		return 'https://www.flickr.com/photos/' + ID + '/' + s.split("/")[4].split("_")[0];
-//	}
-
 	$('#flickrfeed').jflickrfeed({
 		limit: 12,
 		qstrings: { id: ID,	tagmode:'all', tags: document.getElementById("flickrfeed").tagSelected },
