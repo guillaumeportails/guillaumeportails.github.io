@@ -368,11 +368,11 @@ function addKmlLine(f, c = 'blue') {
 
 
 function inreachBubble(prop) {
-    return "<table>" +
-        "<tr><td><h6>Time</h6></td><td><h6>" + (new Date(prop.timestamp))
-        .toLocaleString() + "</h6></td></tr>" +
-        "<tr><td>Message</td><td>" + prop.Text + "</td></tr>" +
-        "</table></h6>";
+    return "<table>"
+		+ "<tr><td><h6>Time</h6></td><td><h6>"
+		+ (new Date(prop.timestamp)).toLocaleString() + "</h6></td></tr>"
+		+ "</table>"
+        + ((prop.Text) ? ("<h5>" + prop.Text + "</h5>") : "");
 }
 
 const iconPoint = L.icon({
@@ -389,7 +389,7 @@ const iconCamp = L.icon({
 //  pour les param de kml.Parse, qui est kmlParse, qui appelle toGEOJSON mais sans lui passer
 //  d'options : fait a la main en incluant ici le code d'appel de toGeoJSON
 
-function myKmlParse(xmldoc, title) {
+function myKmlParse(xmldoc, title, cmt) {
     var line = []; // Pour reconstruire une L.Polyline des kml <Placemark>
     var prev = null;
     var wasz = false;
@@ -426,7 +426,7 @@ function myKmlParse(xmldoc, title) {
             return prev;
         }
     });
-    console.log("ADD " + line.length + " inreach points");
+	setInfo(line.length + " InReach points " + cmt);
     if (line.length > 0) {
         L.polyline(line, {
             color: 'firebrick',
@@ -458,14 +458,14 @@ function loadInfos() {
     new L.polyline([CDG, AKL], {
         color: '#A8A8A8',
         weight: 1
-    }).addTo(map);
+    }).bindPopup('flight in').addTo(map);
     new L.polyline([INV, CDG], {
         color: '#A8A8A8',
         weight: 1
-    }).addTo(map);
+    }).bindPopup('flight out').addTo(map);
 
     addGpxLine("TeAraroaTrail.gpx",
-        "<p>Official Te Araroa</p><p>2016/17 (v35)</p>");
+        "<p>Official Te Araroa</p><p>2017/18 (v36)</p>");
 
     const c_hitch = 'dimgray';
     const c_cycle = 'purple';
@@ -525,8 +525,7 @@ function loadInfos() {
             console.log("GOT " + data.getElementsByTagName(
                     '*').length +
                 " elements (same-domain)");
-            myKmlParse(xmldoc = data, title =
-                "InReach feed");
+            myKmlParse(xmldoc = data, title = "InReach feed", cmt = "(hosted)");
         },
         error: function() {
             console.log("GET tracks/feed.kml error");
@@ -564,8 +563,7 @@ function loadInfos() {
         success: function(data, textstatus, xhdr) { // data : XMLDocument
             console.log("GOT " + data.getElementsByTagName(
                 '*').length + " elements (CORS)");
-            myKmlParse(xmldoc = data, title =
-                "InReach since " + d1);
+            myKmlParse(xmldoc = data, title = "InReach since " + d1, cmt = "(CORS)");
         },
         error: function() {
             // => CORS problem : le site de garmin n'allume pas "Access-Control-Allow-Origin"
@@ -630,10 +628,7 @@ function loadInfos() {
                     if (data.getElementsByTagName(
                             '*').length < 40)
                         console.log(data); // TODO: recommencer avec 0.8*days
-                    myKmlParse(xmldoc = data,
-                        title =
-                        "Inreach since " +
-                        d1);
+                    myKmlParse(xmldoc = data, title = "Inreach since " + d1, cmt = "(proxyed)");
                 },
                 error: function() {
                     console.log(
