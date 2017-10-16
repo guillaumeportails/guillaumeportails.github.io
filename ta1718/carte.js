@@ -421,13 +421,17 @@ function myKmlParse(xmldoc, title, cmt) {
                 prev.setZIndexOffset(100);
             }
             //console.log("togeoJson.pointToLayer " + p.properties.timestamp + " " + wasz + " " + p.properties.Text);
+			var t = null;
+			if (p.properties.timestamp)
+				t = new Date(p.properties.timestamp).toLocaleString();
+			else
+				t = "UTC: " + new Date(p.properties['Time UTC']).toLocaleString();
             prev = L.marker(latlng, options = {
-                title: "UTC: " + (p.properties.timestamp ||
-                    p.properties['Time UTC']), // no HTML
+                title: t, // no HTML
                 icon: iconPoint,
                 zIndexOffset: 0
             });
-			mgrp.addLayer(prev);
+			//mgrp.addLayer(prev);
             return prev;
         }
     });
