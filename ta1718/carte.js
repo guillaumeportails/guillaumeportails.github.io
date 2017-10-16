@@ -277,7 +277,7 @@ function latlonImage(latlng) {
 //  msgelt.innerHTML = 'Current Zoom ' + map.getZoom() + "   " + latlonImage(e.latlng); });
 
 map.on('zoomend', function onZoomChanged(e) {
-    setInfo('zoom ' + map.getZoom());
+    //setInfo('zoom ' + map.getZoom());
 });
 
 
@@ -290,7 +290,7 @@ map.on('keypress', function onKeyPressed(e) {
 });
 
 map.on('click', function onMapClick(e) {
-    setInfo(latlonImage(e.latlng));
+    setInfo(latlonImage(e.latlng) + "  z" + map.getZoom());
 });
 
 
@@ -394,6 +394,10 @@ function myKmlParse(xmldoc, title, cmt) {
     var prev = null;
     var wasz = false;
     var timl = new Date();
+	var mgrp = L.markerClusterGroup({
+		animate: true,
+		disableClusteringAtZoom: 12 
+	});
     // Convertir le XMLDocument data en texte geoJSON puis en layer geojson
     // ! toGeoJson.kml() de mapbox 0.3.1 perd les <TimeStamp>
     //   La spec KML dit juste que TimeStamp est au format std de date XML,
@@ -423,19 +427,21 @@ function myKmlParse(xmldoc, title, cmt) {
                 icon: iconPoint,
                 zIndexOffset: 0
             });
+			mgrp.addLayer(prev);
             return prev;
         }
     });
 	setInfo(line.length + " InReach points " + cmt);
     if (line.length > 0) {
-        L.polyline(line, {
+        mlin = L.polyline(line, {
             color: 'firebrick',
             weight: 2,
             smoothFactor: 2
-        }).bindPopup(title).addTo(map);
+        }).bindPopup(title).addTo(mgrp);
         lgeo.bindPopup(function(layer) {
             return inreachBubble(layer.feature.properties);
-        }).addTo(map);
+        }).addTo(mgrp);
+    map.addLayer(mgrp);
     }
 }
 

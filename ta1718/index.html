@@ -12,8 +12,11 @@
 	<script src="jflickrfeed/jflickrfeed.js"></script>
 
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+	<link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.css" />
+	<link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.Default.css" />
 	<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
-	<script src='https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.js'></script>
+	<script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.js"></script>
+	<script src="https://unpkg.com/leaflet.markercluster@1.1.0/dist/leaflet.markercluster.js"></script>
 	<script src="leaflet.filelayer.js"></script>
 	<script src="togeojson.js"></script>   <!-- patch de omnivore: le 0.3.1 de api.mapbox.com n'a pas TimeStamp -->
 
@@ -26,6 +29,7 @@
 			<a href="https://stonecouch.wordpress.com/2017/09/11/te-araroa/">Blah</a>
 			<a href="https://www.flickr.com/photos/thanjuzo/map?&fLat=-40.9052&fLon=173.4082&zl=6&order_by=recent">Flickr</a>
 			<a href="https://www.flickr.com/photos/tags/araroa/">TA</a>
+			<a href="http://trackleaders.com/teararoa">TL</a>
 		</p>
 		<ul id="flickrfeed"></ul>
 		<script src="flickr.js"></script>
@@ -44,7 +48,7 @@
 	</div>
 
 	<div id="divmap">
-		<p id="msgmap">follow me</p>
+		<p id="msgmap">Planned and actual routes</p>
 		<a id="logo" href="https://www.teararoa.org.nz/" target="_blank"></a>
 		<div id="eltmap" style="width:100%; height:100%"></div>
 		<script src="carte.js"></script>
