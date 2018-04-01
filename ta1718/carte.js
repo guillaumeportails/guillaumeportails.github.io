@@ -19,9 +19,9 @@ function getParameterByName(name, url) {
 
 
 // nztopomaps:
-//      Sur Z=5..9, c'est une photo d'assemblage de cartes => lÈgende illisible (trop petit)
-//      Les Z=10,11,12 ont le meme detail, le 10 est illisible (lÈgende minuscule)
-//      Les Z=13,14,15 ont le meme detail, le 13 est illisible (lÈgende minuscule)
+//      Sur Z=5..9, c'est une photo d'assemblage de cartes => l√©gende illisible (trop petit)
+//      Les Z=10,11,12 ont le meme detail, le 10 est illisible (l√©gende minuscule)
+//      Les Z=13,14,15 ont le meme detail, le 13 est illisible (l√©gende minuscule)
 //      Il vaut mieux alors utiliser OTM a ces Z.
 //
 // LINZ Data Service    https://data.linz.govt.nz/layer/767-nz-topo50-maps/webservices/
@@ -29,9 +29,9 @@ function getParameterByName(name, url) {
 //      + 'b0542c447ceb4901a8363b54f2441727'
 //      + '/tiles/v4/layer=xxx/EPSG:3857/{z}/{x}/{y}.png';
 //    layer 2343 : NZ Topo50  gridless   details constants 1cm=500m
-//                 valable pour Z=13..14 lÈgendes et routes illisibles a Z<=12
+//                 valable pour Z=13..14 l√©gendes et routes illisibles a Z<=12
 //    layer 2324 : NZ Topo250 gridless   details constant 1cm=2500m
-//                 valable pour Z=10..12 lÈgendes et routes illisibles a Z<=9, limite pour 10
+//                 valable pour Z=10..12 l√©gendes et routes illisibles a Z<=9, limite pour 10
 //
 // Meilleure carte de Nouvelle-Zelande selon Z :
 //  <=8   OTM
@@ -396,7 +396,7 @@ function myKmlParse(xmldoc, title, cmt) {
     var timl = new Date();
 	var mgrp = L.markerClusterGroup({
 		animate: true,
-		disableClusteringAtZoom: 12 
+		disableClusteringAtZoom: 8 
 	});
     // Convertir le XMLDocument data en texte geoJSON puis en layer geojson
     // ! toGeoJson.kml() de mapbox 0.3.1 perd les <TimeStamp>
@@ -558,7 +558,7 @@ function loadInfos() {
         'ThierryBernier?d1=' + d1.toJSON();
     //                                  + '%26d2=' + d2.toJSON();
 
-    // Tentative de GET Cross-Domain (en principe cela echoue avec un browser moderne / par dÈfaut)
+    // Tentative de GET Cross-Domain (en principe cela echoue avec un browser moderne / par d√©faut)
     // omnivore.kml(inreachfeed).addTo(map);
     $.ajax({
         type: 'GET',
