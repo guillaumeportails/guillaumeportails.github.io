@@ -503,8 +503,8 @@ function loadInfos() {
         addKmlLine(item[0], (item[1]) ? item[1] : c_feet);
     });
 
-    addKmlLine("mytrack/2017-07-15-XSD-TBe-01.kml",
-        "GpsBipBip example<br>2017-07-15-XSD-TBe-01.kml");
+//    addKmlLine("mytrack/2017-07-15-XSD-TBe-01.kml",
+//        "GpsBipBip example<br>2017-07-15-XSD-TBe-01.kml");
 
 // Ceci ne donne rien de bon : juste le HTML qui publie le contenu du repertoire
 //    console.log("check all KML's");
@@ -549,14 +549,15 @@ function loadInfos() {
     //       vu un succes avec 320 points (14764 eltXML)
     const days = getParameterByName('days') || 30;
     console.log('days = ' + days);
-    var d1 = new Date();
-    d1.setTime(Date.now() - days * 86400 * 1000)
+    var d1 = new Date('October 20, 2017');
+//  d1.setTime(Date.now() - days * 86400 * 1000)
+    var d2 = new Date('March 3, 2018');
 
     // KML du tracking emis par la balise InReach :
     // Cf https://files.delorme.com/support/inreachwebdocs/KML%20Feeds.pdf
     const inreachfeed = 'https://inreach.garmin.com/Feed/Share/' +
-        'ThierryBernier?d1=' + d1.toJSON();
-    //                                  + '%26d2=' + d2.toJSON();
+        'ThierryBernier?d1=' + d1.toJSON() +
+                    '%26d2=' + d2.toJSON();
 
     // Tentative de GET Cross-Domain (en principe cela echoue avec un browser moderne / par défaut)
     // omnivore.kml(inreachfeed).addTo(map);
