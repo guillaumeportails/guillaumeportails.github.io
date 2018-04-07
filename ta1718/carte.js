@@ -547,21 +547,21 @@ function loadInfos() {
     // + Expansion XML du feed InReach = 47 eltXML par Placemark
     // + YQL accepte au moins 84 Placemark = 8 jours
     //       vu un succes avec 320 points (14764 eltXML)
-    const days = getParameterByName('days') || 30;
+    const days = 137; //getParameterByName('days') || 30;
     console.log('days = ' + days);
     var d1 = new Date('October 20, 2017');
-//  d1.setTime(Date.now() - days * 86400 * 1000)
-    var d2 = new Date('March 3, 2018');
+//  d1.setTime(Date.now() - days * 86400 * 1000);
+    var d2 = new Date('March 3, 2018'); // Date.now();
 
     // KML du tracking emis par la balise InReach :
     // Cf https://files.delorme.com/support/inreachwebdocs/KML%20Feeds.pdf
     const inreachfeed = 'https://inreach.garmin.com/Feed/Share/' +
-        'ThierryBernier?d1=2017-10-20%26d2=2018-03-03';
+        'ThierryBernier?d1=2017-10-20&d2=2018-03-03';
 //        'ThierryBernier?d1=' + d1.toJSON() +
 //                    '%26d2=' + d2.toJSON();
 
     // Tentative de GET Cross-Domain (en principe cela echoue avec un browser moderne / par défaut)
-    // omnivore.kml(inreachfeed).addTo(map);
+//  omnivore.kml(inreachfeed).addTo(map);
     $.ajax({
         type: 'GET',
         url: inreachfeed,
@@ -613,11 +613,8 @@ function loadInfos() {
             // => Changer les dates d1 et d2 dans l'URL de feed inreach
             //    Ex: chartreuse 2017/07 3 jours = 658 items, 1608 Document.elements : ok
 
-            const yql_query =
-                'https://query.yahooapis.com/v1/public/' +
-                encodeURI(
-                    'yql?q=select * from xml where url=') +
-                "%22" + inreachfeed + '%22';
+            const yql_query = 'https://query.yahooapis.com/v1/public/' +
+                encodeURI('yql?q=select * from xml where url=') + '%22' + encoreURI(inreachfeed) + '%22';
             console.log("ajax GET " + yql_query);
             $.ajax({
                 type: 'GET',
