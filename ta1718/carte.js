@@ -556,8 +556,9 @@ function loadInfos() {
     // KML du tracking emis par la balise InReach :
     // Cf https://files.delorme.com/support/inreachwebdocs/KML%20Feeds.pdf
     const inreachfeed = 'https://inreach.garmin.com/Feed/Share/' +
-        'ThierryBernier?d1=' + d1.toJSON() +
-                    '%26d2=' + d2.toJSON();
+        'ThierryBernier?d1=2017-10-20%26d2=2018-03-03';
+//        'ThierryBernier?d1=' + d1.toJSON() +
+//                    '%26d2=' + d2.toJSON();
 
     // Tentative de GET Cross-Domain (en principe cela echoue avec un browser moderne / par défaut)
     // omnivore.kml(inreachfeed).addTo(map);
