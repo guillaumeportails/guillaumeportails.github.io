@@ -547,7 +547,7 @@ function loadInfos() {
     // + Expansion XML du feed InReach = 47 eltXML par Placemark
     // + YQL accepte au moins 84 Placemark = 8 jours
     //       vu un succes avec 320 points (14764 eltXML)
-    const days = 137; //getParameterByName('days') || 30;
+    const days = getParameterByName('days') || 30;
     console.log('days = ' + days);
     var d1 = new Date('October 20, 2017');
 //  d1.setTime(Date.now() - days * 86400 * 1000);
@@ -562,6 +562,7 @@ function loadInfos() {
 
     // Tentative de GET Cross-Domain (en principe cela echoue avec un browser moderne / par défaut)
 //  omnivore.kml(inreachfeed).addTo(map);
+if(false){
     $.ajax({
         type: 'GET',
         url: inreachfeed,
@@ -646,7 +647,7 @@ function loadInfos() {
             });
         } // Cas error du ajax.GET direct
     });
-
+}
 } // loadInfos()
 
 
