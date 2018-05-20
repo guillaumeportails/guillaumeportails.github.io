@@ -6,23 +6,28 @@
   <meta name="Carte MULs" content="Carte Leaflet TA,PCT,CDT, ...">
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" />
-  <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.css" />
-  <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@latest/dist/MarkerCluster.css" />
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@latest/dist/MarkerCluster.Default.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet-geosearch@2.6.0/dist/style.css" />
   
   <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
-  <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet@latest/dist/leaflet.js"></script>
   <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.js"></script>
-  <script src="https://unpkg.com/leaflet.markercluster@1.1.0/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@latest/dist/leaflet.markercluster.js"></script>
+  <script src="https://unpkg.com/leaflet-geosearch@2.6.0/dist/bundle.min.js"></script>
 </head>
 
 <body style="height: 100%;">
   <div id="all" style="height: 100%;">
-    <div id="msg" style="position:fixed; top:20; left:60px; z-index:999; border:solid black 1px;">---</div>
+<!--<div id="msg" style="position:fixed; top:20; left:25%; z-index:999; border:solid black 1px; background-color:white; opacity:0.5;">---</div>-->
     <div id="map" style="top:0; border:solid black 1px;"></div>
   </div>
 
 
   <script>
+//----------------------------------------------------------------------------------
+  
+
 //----------------------------------------------------------------------------------
 // patch de omnivore: le 0.3.1 de api.mapbox.com n'a pas TimeStamp
 
@@ -743,6 +748,37 @@ function getCookie(cname) {
 
 //----------------------------------------------------------------------
 
+// IGN: Cf https://geoservices.ign.fr/documentation/utilisation_web/wmts-leaflet.html
+var tileIGN = new L.tileLayer(
+    'https://cartes:cartes@wxs.ign.fr/CLEF/geoportail/wmts?' +
+        '&REQUEST=GetTile&SERVICE=WMTS&VERSION=1.0.0' +
+        '&STYLE=normal' +
+        '&TILEMATRIXSET=PM' +
+        '&FORMAT=image/jpeg' +
+        '&LAYER=ORTHOIMAGERY.ORTHOPHOTOS' +
+        '&TILEMATRIX={z}' +
+        '&TILEROW={y}' +
+        '&TILECOL={x}',	{
+		minZoom : 0,
+		maxZoom : 18,
+        attribution : "IGN-F/Geoportail",
+		tileSize : 256 // les tuiles du Géooportail font 256x256px
+	});
+
+// Google
+var tileGoogleHybrid = new L.tileLayer(
+    'http://{s}.google.com/vt/lyrs=s,h&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains: ['mt0','mt1','mt2','mt3'],
+    attribution: 'GoogleMaps'
+});
+var tileGoogleTerrain = new L.tileLayer(
+    'http://{s}.google.com/vt/lyrs=p&x={x}&y={y}&z={z}', {
+    maxZoom: 20,
+    subdomains:['mt0','mt1','mt2','mt3'],
+    attribution: 'GoogleMaps'
+});
+
 var tilesNztopomaps = new L.TileLayer(
     'http://nz1.nztopomaps.com/{z}/{x}/{y}.png', {
         maxZoom: 15, // Offre du z=15 mais 15 n'a pas plus de detail que 14 et 13.
@@ -860,6 +896,9 @@ var tilesLocal = new L.TileLayer( // Special : server HTTP local pour mix
 
 const basemaps = {
     '<i>local</i>': tilesLocal,
+    'IGN': tileIGN,
+    'Google hybrid': tileGoogleHybrid,
+    'Google terrain': tileGoogleTerrain,
     'nztopomaps': tilesNztopomaps,
     'NZ Topo50': tilesLDS50,
     'NZ Topo250': tilesLDS250,
@@ -890,8 +929,8 @@ const overlays = {
 };
 
 
-
-var map = new L.Map('map', {
+var mapelt = document.getElementById('map');
+var map = new L.Map(mapelt, {
     crs: L.CRS.EPSG3857,
     layers: [tilesOutdoors, tilesLonvia],
     continuousWorld: true,
@@ -912,15 +951,95 @@ L.control.scale({
 }).addTo(map);
 
 
-/*--------------------------------------------------------------------
- * custom Control pour juste afficher du texte
- */
+//--------------------
+// Geocoding control
 
-const msgelt = document.getElementById('msg');
+const provider = new GeoSearch.OpenStreetMapProvider();
+//const provider = new EsriProvider();
+
+const searchControl = new GeoSearch.GeoSearchControl({
+  provider: provider,                                 // required
+  style: 'button',                                    // bar or button
+  autoComplete: true,
+  autoCompleteDelay: 250,
+  showMarker: true,                                   // optional: true|false  - default true
+  showPopup: true,                                    // optional: true|false  - default false
+  marker: {                                           // optional: L.Marker    - default L.Icon.Default
+    icon: new L.Icon.Default(),
+    draggable: false,
+  },
+  popupFormat: ({ query, result }) => result.label,   // optional: function    - default returns result label
+  maxMarkers: 9,                                      // optional: number      - default 1
+  retainZoomLevel: true,                              // optional: true|false  - default false
+  animateZoom: true,                                  // optional: true|false  - default true
+  autoClose: false,                                   // optional: true|false  - default false
+  searchLabel: 'Enter address',                       // optional: string      - default 'Enter address'
+  keepResult: true                                   // optional: true|false  - default false
+});
+
+map.addControl(searchControl);
+
+
+//--------------------------------------------------------------------
+// custom Control pour juste afficher du texte
+
+L.Control.Info = L.Control.extend({
+  onAdd: function (map) {               // happens after added to map
+    var container = L.DomUtil.create('input', 'leaflet-control');
+    container.type  = "button";     // button content is read-only but not select()able, text is not
+    container.disabled = true;
+    container.readOnly = true;
+    container.placeHolder = "last LatLng clicked, copied to the clipboard";
+    container.value = "Leaflet " + L.version; // + ", GeoSearch " + GeoSearch.version;
+    container.style.backgroundColor = 'white';
+    container.style.opacity = '0.5';
+    container.onmouseover = function() { container.style.opacity = '1.0'; };
+    container.onmouseout  = function() { container.style.opacity = '0.5'; };
+    L.DomEvent.disableClickPropagation(container);
+    this._container = container;
+    return container;
+  },
+  setText: function (text) {
+    this._container.value = text;
+  }
+});
+L.control.info = function(options) {
+  return new L.Control.Info(options);
+}
+
+var info = new L.Control.Info({ position: 'bottomleft' });
+info.addTo(map);
 
 function setInfo(content) {
-    msgelt.innerHTML = content;
+    info.setText(content);
 }
+
+
+// Helper pour copier dans le clipboard
+// Utilisable dans un user event listener
+// Cf https://hackernoon.com/copying-text-to-clipboard-with-javascript-df4d4988697f
+function copyToClipboard (str) {
+  const el = document.createElement('textarea');  // Create a <textarea> element
+  el.value = str;                                 // Set its value to the string that you want copied
+  el.setAttribute('readonly', '');                // Make it readonly to be tamper-proof
+  el.style.position = 'absolute';                 
+  el.style.left = '-9999px';                      // Move outside the screen to make it invisible
+  document.body.appendChild(el);                  // Append the <textarea> element to the HTML document
+  const selected =            
+    document.getSelection().rangeCount > 0        // Check if there is any content selected previously
+      ? document.getSelection().getRangeAt(0)     // Store selection if found
+      : false;                                    // Mark as false to know no selection existed before
+  el.select();                                    // Select the <textarea> content
+  document.execCommand('copy');                   // Copy - only works as a result of a user action (e.g. click events)
+  document.body.removeChild(el);                  // Remove the <textarea> element
+  if (selected) {                                 // If a selection existed before copying
+    document.getSelection().removeAllRanges();    // Unselect everything on the HTML document
+    document.getSelection().addRange(selected);   // Restore the original selection
+  }
+}
+
+//----------------------------------------
+
 
 function floatImage(value) {
     const power = 1000000.0;
@@ -948,9 +1067,11 @@ map.on('keypress', function (e) {
 
 map.on('click', function (e) {
   var ll = latlonImage(e.latlng);
+  // Le GeoControl laisse les click de focus le traverser ... et ce listener va pourrir son focus
+  // => filtrage
+  // NB: exceCommand('Copy') ne fonctionne que dans un user event listener, comme ici  
+  if (e.originalEvent.target == mapelt) copyToClipboard(ll);
   setInfo(ll + "  z" + map.getZoom());
-  ll.select();
-  document.execCommand("Copy");     // Copy to the clipboard au format GoogleMaps
 });
 
 map.on("moveend",  function (e) {
@@ -961,8 +1082,9 @@ map.on("moveend",  function (e) {
 });
 
 
-/* Emploi du plugin FileLayer pour charger du KML sur la carte
- */
+//----------------------------------------------------
+// Emploi du plugin FileLayer pour charger du KML sur la carte
+
 var control = L.Control.fileLayerLoad({
     //Allows you to use a customized version of L.geoJson.
     //For example if you are using the Proj4Leaflet leaflet plugin,
