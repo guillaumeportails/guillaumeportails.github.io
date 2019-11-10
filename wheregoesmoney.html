@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Where does the money go ?">
+  <meta name="author" content="Guillaume Portails">
+</head>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@2.8.0"></script>
+
+<style>
+</style>
+
+<body>
+<h2>Where does the <strong>money</strong> go ?</h2>
+<p>
+On an isolated island, 100 people are left, each with $500.<br>
+Every day, one random pair of them exchange a random amount of $.<br>
+Will one of them become and stay <em>rich</em> ?
+</p>
+<div>
+  <button onclick="onStep()">OneMoreDay</button>
+  <label for="optRun">Run</label>
+  <input  id="optRun" type="checkbox" onclick="onRendered()">
+  <label for="optSort">Sort</label>
+  <input  id="optSort" type="checkbox">
+  <br><br>
+  <label for="optPerDay">Number of exchanges (pairs) per day:</label>
+  <input  id="optPerDay" type="range" min="1" max="1000" value="1" style="width:50%;"> 
+  <br>
+  <input id="optU" type="radio" name="rndL" onclick="optLaw=amountU;">Uniformly random amount up to $100<br>
+  <input id="optG" type="radio" name="rndL" onclick="optLaw=amountG;">Gaussian random amount, RMS of $30<br>
+  <input id="optP" type="radio" name="rndL" onclick="optLaw=amountP;">Gaussian, with RMS proportional to account<br>
+  <label for="optLim">Limited to 20% of account</label>
+  <input  id="optLim" type="checkbox">
+  <br>
+</div>
+<br><br>
+<div><canvas id="Histo"></canvas><div>
+
+<script>
+const Npeople       = 100;
+const InitialAmount = 500.0;
+const Limit         = 0.2;
+
+var optRun  = document.getElementById("optRun");
+var optSort = document.getElementById("optSort");
+var optPerD = document.getElementById("optPerDay");
+var optLim  = document.getElementById("optLim");
+var optLaw  = amountU;
+var ctx     = document.getElementById('Histo').getContext('2d');
+document.getElementById("optU").checked = true;
+
+var chart = new Chart(ctx, {
+  type: 'bar',
+  data: {
+    labels: Array(Npeople).fill(''),
+    datasets: [{
+      //minBarLength: 2,
+        data: Array(Npeople).fill(InitialAmount)
+    }]
+  },
+  options: {
+    legend: { display: false },
+    scales: {
+      yAxes: [{
+        scaleLabel: {
+          display: true,
+          labelString: "Money account of each people"
+        },
+        ticks: { min: 0, max: InitialAmount * 4 },
+        gridLines: { display: false }
+      }],
+      xAxes: [{
+        scaleLabel: {
+          display: true,
+          labelString: "people"
+        },
+        gridLines: { display: false }
+      }]
+    }
+  }
+});
+
+
+function gaussian() {    // mean 0 rms 1, Box-Muller
+  var u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0*Math.PI*v);
+}
+function amountU (m) {  // Integers only, or money will evaporate
+  return Math.floor (Math.random() * 100);
+}
+function amountG (m) {
+  return Math.floor (gaussian() * 30);
+}
+function amountP (m) {
+  return Math.floor (gaussian() * 0.333 * m);
+}
+
+function transaction (people) {
+  function justry() {
+    var i = Math.floor(Math.random() * people.length);
+    var j = Math.floor(Math.random() * people.length);
+    if (i == j) return false;
+    var a = optLaw(people[i]);
+    if (a <= 0) return false;
+    if (optLim.checked && (a >= Limit * people[i])) return false;
+//  if (optLim.checked && (a >= Limit * people[j])) return false;
+    if (people[i] < a) return false;
+    people[i] -= a;
+    people[j] += a;
+    return true;
+  }
+  while (justry() == false);
+}
+
+function peopleSort() {
+  chart.data.datasets[0].data.sort(function(a,b){return b-a;});
+}
+
+function peopleInteract(n) {
+  for (var i = 0; i < n; i++) transaction(chart.data.datasets[0].data);
+}
+
+function onStep() {
+  peopleInteract(optPerD.value);
+  if (optSort.checked) peopleSort();
+  chart.update(0);
+}
+
+function onRendered() {
+  var changed = false;
+  if (optRun.checked)  { changed = true; peopleInteract(optPerD.value); }
+  if (optSort.checked) { changed = true; peopleSort(); }
+  if (changed) chart.update();
+}
+
+function onTime() {
+  var changed = false;
+  if (optRun.checked)  { changed = true; peopleInteract(optPerD.value); }
+  if (optSort.checked) { changed = true; peopleSort(); }
+  if (changed) chart.update(0);
+}
+
+function debug(str) { console.log(str); }
+
+// Grmbl, eviter les recursions
+Chart.defaults.global.animation = 200;
+window.setInterval(onTime, 250);
+//Chart.defaults.global.animation.onComplete = onRendered;
+
+</script>
+
+</body>
+</html>
+
+​
