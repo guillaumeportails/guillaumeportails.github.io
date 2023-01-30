@@ -1,0 +1,1093 @@
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1">
+  <meta name="Carte MULs" content="Carte Leaflet TA,PCT,CDT, ...">
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.1/dist/leaflet.css" />
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.css" />
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.Default.css" />
+  
+  <script src="https://code.jquery.com/jquery-2.2.4.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js"></script>
+  <script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.1.0/dist/leaflet.markercluster.js"></script>
+</head>
+
+<body style="height: 100%;">
+  <div id="all" style="height: 100%;">
+    <div id="msg" style="position:fixed; top:20; left:60px; z-index:999; border:solid black 1px;">---</div>
+    <div id="map" style="top:0; border:solid black 1px;"></div>
+  </div>
+
+
+  <script>
+//----------------------------------------------------------------------------------
+// patch de omnivore: le 0.3.1 de api.mapbox.com n'a pas TimeStamp
+
+var toGeoJSON = (function() {
+    'use strict';
+
+    var removeSpace = /\s*/g,
+        trimSpace = /^\s*|\s*$/g,
+        splitSpace = /\s+/;
+    // generate a short, numeric hash of a string
+    function okhash(x) {
+        if (!x || !x.length) return 0;
+        for (var i = 0, h = 0; i < x.length; i++) {
+            h = ((h << 5) - h) + x.charCodeAt(i) | 0;
+        } return h;
+    }
+    // all Y children of X
+    function get(x, y) { return x.getElementsByTagName(y); }
+    function attr(x, y) { return x.getAttribute(y); }
+    function attrf(x, y) { return parseFloat(attr(x, y)); }
+    // one Y child of X, if any, otherwise null
+    function get1(x, y) { var n = get(x, y); return n.length ? n[0] : null; }
+    // https://developer.mozilla.org/en-US/docs/Web/API/Node.normalize
+    function norm(el) { if (el.normalize) { el.normalize(); } return el; }
+    // cast array x into numbers
+    function numarray(x) {
+        for (var j = 0, o = []; j < x.length; j++) { o[j] = parseFloat(x[j]); }
+        return o;
+    }
+    // get the content of a text node, if any
+    function nodeVal(x) {
+        if (x) { norm(x); }
+        return (x && x.textContent) || '';
+    }
+    // get the contents of multiple text nodes, if present
+    function getMulti(x, ys) {
+        var o = {}, n, k;
+        for (k = 0; k < ys.length; k++) {
+            n = get1(x, ys[k]);
+            if (n) o[ys[k]] = nodeVal(n);
+        }
+        return o;
+    }
+    // add properties of Y to X, overwriting if present in both
+    function extend(x, y) { for (var k in y) x[k] = y[k]; }
+    // get one coordinate from a coordinate array, if any
+    function coord1(v) { return numarray(v.replace(removeSpace, '').split(',')); }
+    // get all coordinates from a coordinate array as [[],[]]
+    function coord(v) {
+        var coords = v.replace(trimSpace, '').split(splitSpace),
+            o = [];
+        for (var i = 0; i < coords.length; i++) {
+            o.push(coord1(coords[i]));
+        }
+        return o;
+    }
+    function coordPair(x) {
+        var ll = [attrf(x, 'lon'), attrf(x, 'lat')],
+            ele = get1(x, 'ele'),
+            // handle namespaced attribute in browser
+            heartRate = get1(x, 'gpxtpx:hr') || get1(x, 'hr'),
+            time = get1(x, 'time'),
+            e;
+        if (ele) {
+            e = parseFloat(nodeVal(ele));
+            if (!isNaN(e)) {
+                ll.push(e);
+            }
+        }
+        return {
+            coordinates: ll,
+            time: time ? nodeVal(time) : null,
+            heartRate: heartRate ? parseFloat(nodeVal(heartRate)) : null
+        };
+    }
+
+    // create a new feature collection parent object
+    function fc() {
+        return {
+            type: 'FeatureCollection',
+            features: []
+        };
+    }
+
+    var serializer;
+    if (typeof XMLSerializer !== 'undefined') {
+        /* istanbul ignore next */
+        serializer = new XMLSerializer();
+    // only require xmldom in a node environment
+    } else if (typeof exports === 'object' && typeof process === 'object' && !process.browser) {
+        serializer = new (require('xmldom').XMLSerializer)();
+    }
+    function xml2str(str) {
+        // IE9 will create a new XMLSerializer but it'll crash immediately.
+        // This line is ignored because we don't run coverage tests in IE9
+        /* istanbul ignore next */
+        if (str.xml !== undefined) return str.xml;
+        return serializer.serializeToString(str);
+    }
+
+    var t = {
+        kml: function(doc) {
+
+            var gj = fc(),
+                // styleindex keeps track of hashed styles in order to match features
+                styleIndex = {}, styleByHash = {},
+                // stylemapindex keeps track of style maps to expose in properties
+                styleMapIndex = {},
+                // atomic geospatial types supported by KML - MultiGeometry is
+                // handled separately
+                geotypes = ['Polygon', 'LineString', 'Point', 'Track', 'gx:Track'],
+                // all root placemarks in the file
+                placemarks = get(doc, 'Placemark'),
+                styles = get(doc, 'Style'),
+                styleMaps = get(doc, 'StyleMap');
+
+            for (var k = 0; k < styles.length; k++) {
+                var hash = okhash(xml2str(styles[k])).toString(16);
+                styleIndex['#' + attr(styles[k], 'id')] = hash;
+                styleByHash[hash] = styles[k];
+            }
+            for (var l = 0; l < styleMaps.length; l++) {
+                styleIndex['#' + attr(styleMaps[l], 'id')] = okhash(xml2str(styleMaps[l])).toString(16);
+                var pairs = get(styleMaps[l], 'Pair');
+                var pairsMap = {};
+                for (var m = 0; m < pairs.length; m++) {
+                    pairsMap[nodeVal(get1(pairs[m], 'key'))] = nodeVal(get1(pairs[m], 'styleUrl'));
+                }
+                styleMapIndex['#' + attr(styleMaps[l], 'id')] = pairsMap;
+
+            }
+            for (var j = 0; j < placemarks.length; j++) {
+                gj.features = gj.features.concat(getPlacemark(placemarks[j]));
+            }
+            function kmlColor(v) {
+                var color, opacity;
+                v = v || '';
+                if (v.substr(0, 1) === '#') { v = v.substr(1); }
+                if (v.length === 6 || v.length === 3) { color = v; }
+                if (v.length === 8) {
+                    opacity = parseInt(v.substr(0, 2), 16) / 255;
+                    color = '#' + v.substr(6, 2) +
+                        v.substr(4, 2) +
+                        v.substr(2, 2);
+                }
+                return [color, isNaN(opacity) ? undefined : opacity];
+            }
+            function gxCoord(v) { return numarray(v.split(' ')); }
+            function gxCoords(root) {
+                var elems = get(root, 'coord', 'gx'), coords = [], times = [];
+                if (elems.length === 0) elems = get(root, 'gx:coord');
+                for (var i = 0; i < elems.length; i++) coords.push(gxCoord(nodeVal(elems[i])));
+                var timeElems = get(root, 'when');
+                for (var j = 0; j < timeElems.length; j++) times.push(nodeVal(timeElems[j]));
+                return {
+                    coords: coords,
+                    times: times
+                };
+            }
+            function getGeometry(root) {
+                var geomNode, geomNodes, i, j, k, geoms = [], coordTimes = [];
+                if (get1(root, 'MultiGeometry')) { return getGeometry(get1(root, 'MultiGeometry')); }
+                if (get1(root, 'MultiTrack')) { return getGeometry(get1(root, 'MultiTrack')); }
+                if (get1(root, 'gx:MultiTrack')) { return getGeometry(get1(root, 'gx:MultiTrack')); }
+                for (i = 0; i < geotypes.length; i++) {
+                    geomNodes = get(root, geotypes[i]);
+                    if (geomNodes) {
+                        for (j = 0; j < geomNodes.length; j++) {
+                            geomNode = geomNodes[j];
+                            if (geotypes[i] === 'Point') {
+                                geoms.push({
+                                    type: 'Point',
+                                    coordinates: coord1(nodeVal(get1(geomNode, 'coordinates')))
+                                });
+                            } else if (geotypes[i] === 'LineString') {
+                                geoms.push({
+                                    type: 'LineString',
+                                    coordinates: coord(nodeVal(get1(geomNode, 'coordinates')))
+                                });
+                            } else if (geotypes[i] === 'Polygon') {
+                                var rings = get(geomNode, 'LinearRing'),
+                                    coords = [];
+                                for (k = 0; k < rings.length; k++) {
+                                    coords.push(coord(nodeVal(get1(rings[k], 'coordinates'))));
+                                }
+                                geoms.push({
+                                    type: 'Polygon',
+                                    coordinates: coords
+                                });
+                            } else if (geotypes[i] === 'Track' ||
+                                geotypes[i] === 'gx:Track') {
+                                var track = gxCoords(geomNode);
+                                geoms.push({
+                                    type: 'LineString',
+                                    coordinates: track.coords
+                                });
+                                if (track.times.length) coordTimes.push(track.times);
+                            }
+                        }
+                    }
+                }
+                return {
+                    geoms: geoms,
+                    coordTimes: coordTimes
+                };
+            }
+            function getPlacemark(root) {
+                var geomsAndTimes = getGeometry(root), i, properties = {},
+                    name = nodeVal(get1(root, 'name')),
+                    address = nodeVal(get1(root, 'address')),
+                    styleUrl = nodeVal(get1(root, 'styleUrl')),
+                    description = nodeVal(get1(root, 'description')),
+                    timeSpan = get1(root, 'TimeSpan'),
+                    timeStamp = get1(root, 'TimeStamp'),
+                    extendedData = get1(root, 'ExtendedData'),
+                    lineStyle = get1(root, 'LineStyle'),
+                    polyStyle = get1(root, 'PolyStyle'),
+                    visibility = get1(root, 'visibility');
+
+                if (!geomsAndTimes.geoms.length) return [];
+                if (name) properties.name = name;
+                if (address) properties.address = address;
+                if (styleUrl) {
+                    if (styleUrl[0] !== '#') {
+                        styleUrl = '#' + styleUrl;
+                    }
+
+                    properties.styleUrl = styleUrl;
+                    if (styleIndex[styleUrl]) {
+                        properties.styleHash = styleIndex[styleUrl];
+                    }
+                    if (styleMapIndex[styleUrl]) {
+                        properties.styleMapHash = styleMapIndex[styleUrl];
+                        properties.styleHash = styleIndex[styleMapIndex[styleUrl].normal];
+                    }
+                    // Try to populate the lineStyle or polyStyle since we got the style hash
+                    var style = styleByHash[properties.styleHash];
+                    if (style) {
+                        if (!lineStyle) lineStyle = get1(style, 'LineStyle');
+                        if (!polyStyle) polyStyle = get1(style, 'PolyStyle');
+                    }
+                }
+                if (description) properties.description = description;
+                if (timeSpan) {
+                    var begin = nodeVal(get1(timeSpan, 'begin'));
+                    var end = nodeVal(get1(timeSpan, 'end'));
+                    properties.timespan = { begin: begin, end: end };
+                }
+                if (timeStamp) {
+                    properties.timestamp = nodeVal(get1(timeStamp, 'when'));
+                }
+                if (lineStyle) {
+                    var linestyles = kmlColor(nodeVal(get1(lineStyle, 'color'))),
+                        color = linestyles[0],
+                        opacity = linestyles[1],
+                        width = parseFloat(nodeVal(get1(lineStyle, 'width')));
+                    if (color) properties.stroke = color;
+                    if (!isNaN(opacity)) properties['stroke-opacity'] = opacity;
+                    if (!isNaN(width)) properties['stroke-width'] = width;
+                }
+                if (polyStyle) {
+                    var polystyles = kmlColor(nodeVal(get1(polyStyle, 'color'))),
+                        pcolor = polystyles[0],
+                        popacity = polystyles[1],
+                        fill = nodeVal(get1(polyStyle, 'fill')),
+                        outline = nodeVal(get1(polyStyle, 'outline'));
+                    if (pcolor) properties.fill = pcolor;
+                    if (!isNaN(popacity)) properties['fill-opacity'] = popacity;
+                    if (fill) properties['fill-opacity'] = fill === '1' ? properties['fill-opacity'] || 1 : 0;
+                    if (outline) properties['stroke-opacity'] = outline === '1' ? properties['stroke-opacity'] || 1 : 0;
+                }
+                if (extendedData) {
+                    var datas = get(extendedData, 'Data'),
+                        simpleDatas = get(extendedData, 'SimpleData');
+
+                    for (i = 0; i < datas.length; i++) {
+                        properties[datas[i].getAttribute('name')] = nodeVal(get1(datas[i], 'value'));
+                    }
+                    for (i = 0; i < simpleDatas.length; i++) {
+                        properties[simpleDatas[i].getAttribute('name')] = nodeVal(simpleDatas[i]);
+                    }
+                }
+                if (visibility) {
+                    properties.visibility = nodeVal(visibility);
+                }
+                if (geomsAndTimes.coordTimes.length) {
+                    properties.coordTimes = (geomsAndTimes.coordTimes.length === 1) ?
+                        geomsAndTimes.coordTimes[0] : geomsAndTimes.coordTimes;
+                }
+                var feature = {
+                    type: 'Feature',
+                    geometry: (geomsAndTimes.geoms.length === 1) ? geomsAndTimes.geoms[0] : {
+                        type: 'GeometryCollection',
+                        geometries: geomsAndTimes.geoms
+                    },
+                    properties: properties
+                };
+                if (attr(root, 'id')) feature.id = attr(root, 'id');
+                return [feature];
+            }
+            return gj;
+        },
+        gpx: function(doc) {
+            var i,
+                tracks = get(doc, 'trk'),
+                routes = get(doc, 'rte'),
+                waypoints = get(doc, 'wpt'),
+                // a feature collection
+                gj = fc(),
+                feature;
+            for (i = 0; i < tracks.length; i++) {
+                feature = getTrack(tracks[i]);
+                if (feature) gj.features.push(feature);
+            }
+            for (i = 0; i < routes.length; i++) {
+                feature = getRoute(routes[i]);
+                if (feature) gj.features.push(feature);
+            }
+            for (i = 0; i < waypoints.length; i++) {
+                gj.features.push(getPoint(waypoints[i]));
+            }
+            function getPoints(node, pointname) {
+                var pts = get(node, pointname),
+                    line = [],
+                    times = [],
+                    heartRates = [],
+                    l = pts.length;
+                if (l < 2) return {};  // Invalid line in GeoJSON
+                for (var i = 0; i < l; i++) {
+                    var c = coordPair(pts[i]);
+                    line.push(c.coordinates);
+                    if (c.time) times.push(c.time);
+                    if (c.heartRate) heartRates.push(c.heartRate);
+                }
+                return {
+                    line: line,
+                    times: times,
+                    heartRates: heartRates
+                };
+            }
+            function getTrack(node) {
+                var segments = get(node, 'trkseg'),
+                    track = [],
+                    times = [],
+                    heartRates = [],
+                    line;
+                for (var i = 0; i < segments.length; i++) {
+                    line = getPoints(segments[i], 'trkpt');
+                    if (line) {
+                        if (line.line) track.push(line.line);
+                        if (line.times && line.times.length) times.push(line.times);
+                        if (line.heartRates && line.heartRates.length) heartRates.push(line.heartRates);
+                    }
+                }
+                if (track.length === 0) return;
+                var properties = getProperties(node);
+                extend(properties, getLineStyle(get1(node, 'extensions')));
+                if (times.length) properties.coordTimes = track.length === 1 ? times[0] : times;
+                if (heartRates.length) properties.heartRates = track.length === 1 ? heartRates[0] : heartRates;
+                return {
+                    type: 'Feature',
+                    properties: properties,
+                    geometry: {
+                        type: track.length === 1 ? 'LineString' : 'MultiLineString',
+                        coordinates: track.length === 1 ? track[0] : track
+                    }
+                };
+            }
+            function getRoute(node) {
+                var line = getPoints(node, 'rtept');
+                if (!line.line) return;
+                var prop = getProperties(node);
+                extend(prop, getLineStyle(get1(node, 'extensions')));
+                var routeObj = {
+                    type: 'Feature',
+                    properties: prop,
+                    geometry: {
+                        type: 'LineString',
+                        coordinates: line.line
+                    }
+                };
+                return routeObj;
+            }
+            function getPoint(node) {
+                var prop = getProperties(node);
+                extend(prop, getMulti(node, ['sym']));
+                return {
+                    type: 'Feature',
+                    properties: prop,
+                    geometry: {
+                        type: 'Point',
+                        coordinates: coordPair(node).coordinates
+                    }
+                };
+            }
+            function getLineStyle(extensions) {
+                var style = {};
+                if (extensions) {
+                    var lineStyle = get1(extensions, 'line');
+                    if (lineStyle) {
+                        var color = nodeVal(get1(lineStyle, 'color')),
+                            opacity = parseFloat(nodeVal(get1(lineStyle, 'opacity'))),
+                            width = parseFloat(nodeVal(get1(lineStyle, 'width')));
+                        if (color) style.stroke = color;
+                        if (!isNaN(opacity)) style['stroke-opacity'] = opacity;
+                        // GPX width is in mm, convert to px with 96 px per inch
+                        if (!isNaN(width)) style['stroke-width'] = width * 96 / 25.4;
+                    }
+                }
+                return style;
+            }
+            function getProperties(node) {
+                var prop = getMulti(node, ['name', 'cmt', 'desc', 'type', 'time', 'keywords']),
+                    links = get(node, 'link');
+                if (links.length) prop.links = [];
+                for (var i = 0, link; i < links.length; i++) {
+                    link = { href: attr(links[i], 'href') };
+                    extend(link, getMulti(links[i], ['text', 'type']));
+                    prop.links.push(link);
+                }
+                return prop;
+            }
+            return gj;
+        }
+    };
+    return t;
+})();
+
+if (typeof module !== 'undefined') module.exports = toGeoJSON;
+
+// patch de omnivore: le 0.3.1 de api.mapbox.com n'a pas TimeStamp
+//----------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------
+// Load files *locally* (GeoJSON, KML, GPX) into the map
+// using the HTML5 File API.
+//
+// Requires Mapbox's togeojson.js to be in global scope
+// https://github.com/mapbox/togeojson
+
+(function (factory, window) {
+    // define an AMD module that relies on 'leaflet'
+    if (typeof define === 'function' && define.amd && window.toGeoJSON) {
+        define(['leaflet'], function (L) {
+            factory(L, window.toGeoJSON);
+        });
+    } else if (typeof module === 'object' && module.exports) {
+        // require('LIBRARY') returns a factory that requires window to
+        // build a LIBRARY instance, we normalize how we use modules
+        // that require this pattern but the window provided is a noop
+        // if it's defined
+        module.exports = function (root, L, toGeoJSON) {
+            if (L === undefined) {
+                if (typeof window !== 'undefined') {
+                    L = require('leaflet');
+                } else {
+                    L = require('leaflet')(root);
+                }
+            }
+            if (toGeoJSON === undefined) {
+                if (typeof window !== 'undefined') {
+                    toGeoJSON = require('togeojson');
+                } else {
+                    toGeoJSON = require('togeojson')(root);
+                }
+            }
+            factory(L, toGeoJSON);
+            return L;
+        };
+    } else if (typeof window !== 'undefined' && window.L && window.toGeoJSON) {
+        factory(window.L, window.toGeoJSON);
+    }
+}(function fileLoaderFactory(L, toGeoJSON) {
+    var FileLoader = L.Class.extend({
+        includes: L.Mixin.Events,
+        options: {
+            layer: L.geoJson,
+            layerOptions: {},
+            fileSizeLimit: 1024
+        },
+
+        initialize: function (map, options) {
+            this._map = map;
+            L.Util.setOptions(this, options);
+
+            this._parsers = {
+                geojson: this._loadGeoJSON,
+                json: this._loadGeoJSON,
+                gpx: this._convertToGeoJSON,
+                kml: this._convertToGeoJSON
+            };
+        },
+
+        load: function (file /* File */) {
+            // Check file size
+            var fileSize = (file.size / 1024).toFixed(4);
+            if (fileSize > this.options.fileSizeLimit) {
+                this.fire('data:error', {
+                    error: new Error('File size exceeds limit (' + fileSize + ' > ' + this.options.fileSizeLimit + 'kb)')
+                });
+                return;
+            }
+
+            // Check file extension
+            var ext = file.name.split('.').pop(),
+                parser = this._parsers[ext];
+            if (!parser) {
+                this.fire('data:error', {
+                    error: new Error('Unsupported file type ' + file.type + '(' + ext + ')')
+                });
+                return;
+            }
+            // Read selected file using HTML5 File API
+            var reader = new FileReader();
+            reader.onload = L.Util.bind(function (e) {
+                try {
+                    this.fire('data:loading', { filename: file.name, format: ext });
+                    var layer = parser.call(this, e.target.result, ext);
+                    this.fire('data:loaded', { layer: layer, filename: file.name, format: ext });
+                } catch (err) {
+                    this.fire('data:error', { error: err });
+                }
+            }, this);
+            reader.readAsText(file);
+            return reader;
+        },
+
+        _loadGeoJSON: function (content) {
+            if (typeof content === 'string') {
+                content = JSON.parse(content);
+            }
+            var layer = this.options.layer(content, this.options.layerOptions);
+
+            if (layer.getLayers().length === 0) {
+                throw new Error('GeoJSON has no valid layers.');
+            }
+
+            if (this.options.addToMap) {
+                layer.addTo(this._map);
+            }
+            return layer;
+        },
+
+        _convertToGeoJSON: function (content, format) {
+            // Format is either 'gpx' or 'kml'
+            if (typeof content === 'string') {
+                content = (new window.DOMParser()).parseFromString(content, 'text/xml');
+            }
+            var geojson = toGeoJSON[format](content);
+            return this._loadGeoJSON(geojson);
+        }
+    });
+
+    var FileLayerLoad = L.Control.extend({
+        statics: {
+            TITLE: 'Load local file (GPX, KML, GeoJSON)',
+            LABEL: '&#8965;'
+        },
+        options: {
+            position: 'topleft',
+            fitBounds: true,
+            layerOptions: {},
+            addToMap: true,
+            fileSizeLimit: 1024
+        },
+
+        initialize: function (options) {
+            L.Util.setOptions(this, options);
+            this.loader = null;
+        },
+
+        onAdd: function (map) {
+            this.loader = L.Util.fileLoader(map, this.options);
+
+            this.loader.on('data:loaded', function (e) {
+                // Fit bounds after loading
+                if (this.options.fitBounds) {
+                    window.setTimeout(function () {
+                        map.fitBounds(e.layer.getBounds());
+                    }, 500);
+                }
+            }, this);
+
+            // Initialize Drag-and-drop
+            this._initDragAndDrop(map);
+
+            // Initialize map control
+            return this._initContainer();
+        },
+
+        _initDragAndDrop: function (map) {
+            var thisFileLayerLoad = this;
+            var dropbox = map._container;
+
+            var callbacks = {
+                dragenter: function () {
+                    map.scrollWheelZoom.disable();
+                },
+                dragleave: function () {
+                    map.scrollWheelZoom.enable();
+                },
+                dragover: function (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+                },
+                drop: function (e) {
+                    e.stopPropagation();
+                    e.preventDefault();
+
+                    thisFileLayerLoad._loadFiles(e.dataTransfer.files);
+                    map.scrollWheelZoom.enable();
+                }
+            };
+            for (var name in callbacks) {
+                dropbox.addEventListener(name, callbacks[name], false);
+            }
+        },
+
+        _initContainer: function () {
+            var thisFileLayerLoad = this;
+
+            // Create a button, and bind click on hidden file input
+            var zoomName = 'leaflet-control-filelayer leaflet-control-zoom',
+                barName = 'leaflet-bar',
+                partName = barName + '-part',
+                container = L.DomUtil.create('div', zoomName + ' ' + barName);
+            var link = L.DomUtil.create('a', zoomName + '-in ' + partName, container);
+            link.innerHTML = L.Control.FileLayerLoad.LABEL;
+            link.href = '#';
+            link.title = L.Control.FileLayerLoad.TITLE;
+
+            // Create an invisible file input
+            var fileInput = L.DomUtil.create('input', 'hidden', container);
+            fileInput.type = 'file';
+            fileInput.multiple = 'multiple';
+            if (!this.options.formats) {
+                fileInput.accept = '.gpx,.kml,.geojson';
+            } else {
+                fileInput.accept = this.options.formats.join(',');
+            }
+            fileInput.style.display = 'none';
+            // Load on file change
+            fileInput.addEventListener('change', function () {
+                thisFileLayerLoad._loadFiles(this.files);
+                // reset so that the user can upload the same file again if they want to
+                this.value = '';
+            }, false);
+
+            L.DomEvent.disableClickPropagation(link);
+            L.DomEvent.on(link, 'click', function (e) {
+                fileInput.click();
+                e.preventDefault();
+            });
+            return container;
+        },
+
+        _loadFiles: function (files) {
+            files = Array.prototype.slice.apply(files);
+
+            var fileLoader = this.loader;
+            var i = files.length;
+            setTimeout(function () {
+                fileLoader.load(files.shift());
+                if (files.length > 0) {
+                    setTimeout(arguments.callee, 25);
+                }
+            }, 25);
+        }
+    });
+
+    L.Util.FileLoader = FileLoader;
+    L.Util.fileLoader = function (map, options) {
+        return new L.Util.FileLoader(map, options);
+    };
+
+    L.Control.FileLayerLoad = FileLayerLoad;
+    L.Control.fileLayerLoad = function (options) {
+        return new L.Control.FileLayerLoad(options);
+    };
+}, window));
+// Load files *locally* (GeoJSON, KML, GPX) into the map
+//----------------------------------------------------------------------------------
+
+
+//--------------------------------------------------------------------------------------
+// Carte Leaflet comprenant :
+// + un fond a choisir, possiblement depuis un serveur local (localhost:3000)
+// + des traces linestrings des chemins heberges sur le meme site que ce script
+
+
+// Decoder un parametre "?param=valeur" de l'URI
+function getParameterByName(name, url) {
+    if (!url) url = window.location.href;
+    name = name.replace(/[\[\]]/g, "\\$&");
+    var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+        results = regex.exec(url);
+    if (!results) return null;
+    if (!results[2]) return '';
+    return decodeURIComponent(results[2].replace(/\+/g, " "));
+}
+
+function getCookie(cname) {
+    var name = cname + "=";
+    var decodedCookie = decodeURIComponent(document.cookie);
+    var ca = decodedCookie.split(';');
+    for(var i = 0; i <ca.length; i++) {
+        var c = ca[i];
+        while (c.charAt(0) == ' ') {
+            c = c.substring(1);
+        }
+        if (c.indexOf(name) == 0) {
+            return c.substring(name.length, c.length);
+        }
+    }
+    return null;
+}
+
+
+//----------------------------------------------------------------------
+
+var tilesNztopomaps = new L.TileLayer(
+    'http://nz1.nztopomaps.com/{z}/{x}/{y}.png', {
+        maxZoom: 15, // Offre du z=15 mais 15 n'a pas plus de detail que 14 et 13.
+        continuousWorld: true,
+        tms: true, //true pour nztopomaps
+        attribution: 'nztopomaps.com, Sourced from LINZ. CC-BY 3.0'
+    });
+
+var tilesLDS50 = new L.TileLayer(
+    'https://tiles-{s}.data-cdn.linz.govt.nz/services;key=' +
+    'b0542c447ceb4901a8363b54f2441727' +
+    '/tiles/v4/layer=2343,style=auto/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        subdomains: 'ab',
+        continuousWorld: true,
+        tms: true,
+        attribution: 'LINZ Data Service, CC-BY 3.0'
+    });
+
+var tilesLDS250 = new L.TileLayer(
+    'http://tiles-{s}.data-cdn.linz.govt.nz/services;key=' +
+    'b0542c447ceb4901a8363b54f2441727' +
+    '/tiles/v4/layer=2324/EPSG:3857/{z}/{x}/{y}.png', {
+        maxZoom: 18,
+        subdomains: 'ab',
+        continuousWorld: true,
+        tms: true,
+        attribution: 'LINZ Data Service, CC-BY 3.0'
+    });
+
+var tilesWatercolor = new L.TileLayer(
+    'http://tile.stamen.com/watercolor/{z}/{x}/{y}.jpg', {
+        maxZoom: 17,
+        attribution: 'Stamen.com, Sourced from LINZ. CC-BY 3.0'
+    });
+
+var tilesToner = new L.TileLayer(
+    'http://tile.stamen.com/toner/{z}/{x}/{y}.png', {
+        maxZoom: 15,
+        attribution: 'Stamen.com, Sourced from LINZ. CC-BY 3.0'
+    });
+
+var tilesTerrain = L.tileLayer(
+    'https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}.{ext}', {
+        maxZoom: 18,
+        attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        subdomains: 'abcd',
+        ext: 'png'
+    });
+
+var tilesOSM = new L.TileLayer(
+    'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        subdomains: 'abc',
+        attribution: 'OpenStreetMap. CC-BY 3.0'
+    });
+
+var tilesOCM = new L.TileLayer(
+    'http://{s}.tile.opencyclemap.org/cycle/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        subdomains: 'ab',
+        attribution: 'OpenCycleMap. CC-BY 3.0'
+    });
+
+var tilesOTM = new L.TileLayer(
+    'http://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', /* https pour le site OTM uniquement */ {
+        maxZoom: 17,
+        subdomains: 'abc',
+        attribution: '&copy; <a href="http://opentopomap.org/credits">OpenTopoMap</a> CC-BY-SA'
+    });
+
+var tilesOutdoors = new L.TileLayer(
+    'https://{s}.tile.thunderforest.com/outdoors/{z}/{x}/{y}.png?apikey=d2842e9679314b55a9c0a84e94961f0e', {
+        maxZoom: 17,
+        subdomains: 'ab',
+        attribution: 'Thunderforest.com. CC-BY 3.0'
+    });
+
+var tilesHikeBike = new L.TileLayer(
+    'http://{s}.tiles.wmflabs.org/hikebike/{z}/{x}/{y}.png', {
+        maxZoom: 17,
+        subdomains: 'abc',
+        attribution: 'Thunderforest.com. CC-BY 3.0'
+    });
+
+var tilesDelorme = new L.TileLayer(
+    'http://server.arcgisonline.com/ArcGIS/rest/services/Specialty/DeLorme_World_Base_Map/MapServer/tile/{z}/{y}/{x}', {
+        minZoom: 1,
+        maxZoom: 11,
+        attribution: 'Tiles &copy; Esri &mdash; Copyright: &copy;2012 DeLorme'
+    });
+
+var tilesWorldStreets = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012'
+    });
+
+var tilesImagery = L.tileLayer(
+    'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    });
+
+var tilesKorona = new L.TileLayer(
+    'http://korona.geog.uni-heidelberg.de/tiles/roads/x={x}&y={y}&z={z}', {
+        minZoom: 1,
+        maxZoom: 18,
+        attribution: 'Tiles &copy; Korona Uni-Heidelberg'
+    });
+
+var tilesLocal = new L.TileLayer( // Special : server HTTP local pour mix
+    'http://localhost:3000/tiles/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: 'OSM, LINZ, et al., CC-BY-SA'
+    });
+
+const basemaps = {
+    '<i>local</i>': tilesLocal,
+    'nztopomaps': tilesNztopomaps,
+    'NZ Topo50': tilesLDS50,
+    'NZ Topo250': tilesLDS250,
+    'nztopomaps': tilesNztopomaps,
+//  'OCM': tilesOCM,
+    'OSM': tilesOSM,
+    'OTM': tilesOTM,
+    'Hike,Bike': tilesHikeBike,
+    'Outdoors': tilesOutdoors,
+    'DeLorme': tilesDelorme,
+    'WorldStreets': tilesWorldStreets,
+    'Korona': tilesKorona,
+    'watercolor': tilesWatercolor,
+    'toner': tilesToner,
+    'terrain': tilesTerrain,
+    'imagery': tilesImagery
+};
+
+// Overlays
+var tilesLonvia = new L.TileLayer(
+    'http://tile.lonvia.de/hiking/{z}/{x}/{y}.png', {
+        maxZoom: 17,
+        attribution: '<a hrf="http://lonvia.de/">Lonvia</a>, et al. CC-BY 3.0'
+    });
+
+const overlays = {
+    'Lonvia': tilesLonvia
+};
+
+
+
+var map = new L.Map('map', {
+    crs: L.CRS.EPSG3857,
+    layers: [tilesOutdoors, tilesLonvia],
+    continuousWorld: true,
+    worldCopyJump: false,
+    zoomControl: false,
+    //zoomSnap: 0.5,
+    //zoomDelta: 0.5,
+    attributionControl: true
+});
+
+L.control.layers(basemaps, overlays, {
+    collapsed: true
+}).addTo(map);
+
+L.control.scale({
+    metric: true,
+    imperial: true
+}).addTo(map);
+
+
+/*--------------------------------------------------------------------
+ * custom Control pour juste afficher du texte
+ */
+
+const msgelt = document.getElementById('msg');
+
+function setInfo(content) {
+    msgelt.innerHTML = content;
+}
+
+function floatImage(value) {
+    const power = 1000000.0;
+    return String(Math.round(value * power) / power);
+}
+
+function latlonImage(latlng) {
+    return floatImage(latlng.lat) + "," + floatImage(latlng.lng);
+}
+
+
+//map.on('mousemove', function onMouseMove(e) {
+//  setInfo('Current Zoom ' + map.getZoom() + "   " + latlonImage(e.latlng));
+//});
+
+//map.on('zoomend', function onZoomChanged(e) {
+//  setInfo('zoom ' + map.getZoom());
+//});
+
+map.on('keypress', function (e) {
+    if (e.originalEvent.code == 'KeyC') {
+        setInfo('Lat Lon: ' + latlonImage(e.latlng));
+    }
+});
+
+map.on('click', function (e) {
+  var ll = latlonImage(e.latlng);
+  setInfo(ll + "  z" + map.getZoom());
+  ll.select();
+  document.execCommand("Copy");     // Copy to the clipboard au format GoogleMaps
+});
+
+map.on("moveend",  function (e) {
+  // Pour restaurer la derniere position vue
+  document.cookie = "clat=" + map.getCenter().lat + ";";
+  document.cookie = "clng=" + map.getCenter().lng + ";";
+  document.cookie = "zoom=" + map.getZoom() + ";";
+});
+
+
+/* Emploi du plugin FileLayer pour charger du KML sur la carte
+ */
+var control = L.Control.fileLayerLoad({
+    //Allows you to use a customized version of L.geoJson.
+    //For example if you are using the Proj4Leaflet leaflet plugin,
+    //you can pass L.Proj.geoJson and load the files into the
+    //L.Proj.GeoJson instead of the L.geoJson.
+    layer: L.geoJson,
+    //See http://leafletjs.com/reference.html#geojson-options
+    layerOptions: {
+        style: {
+            color: 'black'
+        },
+        filter: function(feature) {
+            return (feature.geometry.type == "LineString");
+        }
+    },
+    //Add to map after loading (default: true) ?
+    addToMap: true,
+    //File size limit in kb (default: 1024) ?
+    fileSizeLimit: 4096,
+    //Restrict accepted file formats (default: .geojson, .kml, and .gpx) ?
+    formats: ['.geojson', '.kml', '.gpx']
+}).addTo(map);
+
+control.loader.on('data:loaded', function(e) {
+    //Add to map layer switcher
+    layerswitcher.addOverlay(e.layer, e.filename);
+});
+
+
+// Centrer la vue sur la fin de session precedente
+var plat = getCookie("clat") || "0";
+var plng = getCookie("clng") || "0";
+var pzom = getCookie("zoom") || "2";
+map.setView([plat+0.0, plng+0.0], pzom);
+
+
+function addGpxLine(f, n, c = 'red') {
+    omnivore.gpx("tracks/" + f,
+            null,
+            L.geoJson(null, {
+                filter: function(f) {
+                    return (f.geometry.type == "LineString");
+                },
+                style: function(f) {
+                    return {
+                        color: c
+                    };
+                }
+            }))
+        .bindPopup(n).addTo(map);
+}
+
+function addKmlLine(f, c = 'blue') {
+    omnivore.kml("tracks/" + f,
+            null,
+            L.geoJson(null, {
+                filter: function(f) {
+                    return (f.geometry.type == "LineString");
+                },
+                style: function(f) {
+                    return {
+                        color: c
+                    };
+                },
+                onEachFeature: function(f, layer) {
+                    if (f.properties && f.properties.name) {
+                        layer.bindPopup(f.properties.name);
+                    }
+                }
+            })).addTo(map);
+}
+
+
+
+function loadTA() {
+
+    addGpxLine("TeAraroaTrail.gpx",
+        "<p>Official Te Araroa</p><p>2017/18 (v36)</p>");
+
+    const c_hitch = 'dimgray';
+    const c_cycle = 'purple';
+    const c_feet  = 'blue';
+    const kmls = [
+	    [ "Russel.kml",               c_hitch ],
+		[ "brett.kml" ],
+	    [ "Hunua-Coromandel.kml",     c_hitch ],
+		[ "coromandel.kml" ],
+	    [ "Coromandel-Kaimai.kml",    c_hitch ],
+		[ "kaimai.kml" ],
+	    [ "Kaimai-Waikato.kml",       c_hitch ],
+	    [ "Waikato.kml",              c_cycle ],
+		[ "Waikato-Pureroa.kml" ],
+		[ "tongariro.kml" ],
+	    [ "Whanganui-Taranaki.kml",   c_hitch ],
+		[ "taranaki.kml" ],
+        [ "Hawea-Aspiring.kml",       c_hitch ],
+        [ "aspiring.kml" ],
+        [ "routeburn.kml" ],
+        [ "pyke-hollyford.kml" ],
+        [ "caples.kml" ],
+    ];
+    kmls.forEach(function(item,index) {
+        addKmlLine(item[0], (item[1]) ? item[1] : c_feet);
+    });
+
+} // loadTA()
+
+
+
+// Carte Leaflet
+//-----------------------------------------------------------------------------------
+
+
+//---------------- Window height handling
+// Cf https://github.com/Leaflet/Leaflet/issues/1266
+
+$(window).on("resize", function () {
+  var h = $(window).height();
+  $("#all").height(h - 32);
+  $("#map").height(h - 32);
+  map.invalidateSize();
+}).trigger("resize");
+
+  </script>
+
+
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport"
+		content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+	<meta name="apple-mobile-web-app-capable" content="yes">
+	<meta name="description" content="Leaflet of the USA/CDT with embedded gallery and Instagram feed">
+
+	<link rel="stylesheet" type="text/css" href="flex.css" />
+
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css" />
+	<link rel="stylesheet" type="text/css"
+		href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.css" />
+	<link rel="stylesheet" type="text/css"
+		href="https://unpkg.com/leaflet.markercluster@1.1.0/dist/MarkerCluster.Default.css" />
+	<script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+	<script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.js"></script>
+	<script src="https://unpkg.com/leaflet.markercluster@1.1.0/dist/leaflet.markercluster.js"></script>
+	<script src="leaflet.filelayer.js"></script>
+	<script src="togeojson.js"></script>
+</head>
+
+
+<body style="margin:0;height:100%;overflow-y:hidden">
+
+	<!-- ======= PHOTO div -->
+	<div id="divphoto">
+		<button type="button" onclick="bphoto()">Update</button>
+		<span style="float:right;">
+			<label for="autoFlyTo">auto fly to</label>
+			<input type="checkbox" id="photo:autoFlyTo" name="FlyTo">&rarr;
+		</span>
+		<pre id="photo:debug" style="white-space: pre-wrap;">DEBUGZONE</pre>
+		<div id="photo:feed"></div>
+		<script src="drive.js"></script>
+	</div>
+
+	<!-- ======= MAP div -->
+	<div id="divmap">
+		<p id="msgmap">Planned and actual routes
+			<a href="https://continentaldividetrail.org/explore-the-trail/">CDTC</a>
+		</p>
+		<a id="logo" href="https://continentaldividetrail.org/" target="_blank"></a>
+		<div id="eltmap" style="width:100%; height:100%"></div>
+		<script src="carte.js"></script>
+	</div>
+
+	<!-- ======= INSTAGRAM div -->
+	<div id="divinsta">  <!-- onmousemove="toto()"> -->
+		<button onclick="tutu()">HERE</button>
+		<script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
+		<iframe id="igfeed" src="https://cdn.lightwidget.com/widgets/b9c78f86ff165262b3093e1cbc23bbd1.html"
+			scrolling="no" allowtransparency="true" class="lightwidget-widget"
+			style="width:100%;height:100%;border:0;overflow-x:hidden;overflow-y:auto;"></iframe>
+		<!-- "pointer-events:none;" pour capter onmousexx mais tue lightwidget -->
+		</iframe>
+	</div>
+
+	<div id="test">TEST</div>
+
+
+	<script type="text/javascript">
+		// // Experiments
+		// let nnn = 0;
+		// function toto() {
+		// 	nnn = nnn + 1;
+		// 	document.getElementById('test').innerHTML = "<p>++" + nnn + "++</p>";
+		// }
+		// function tutu() {
+		// 	// made by chatGPT
+		// 	var iframe = document.getElementById("igfeed");
+		// 	var iframeDoc = iframe.contentDocument || iframe.contentWindow.document;      // Viole CORS
+		// 	var elements = iframeDoc.getElementsByTagName("*");
+		// 	var textList = [];
+		// 	for (var i = 0; i < elements.length; i++) {
+		// 		var elementText = elements[i].innerText;
+		// 		if (elementText) {
+		// 			textList.push(elementText);
+		// 		}
+		// 	}
+
+		// 	document.getElementById('test').innerHTML = "<p>" + textList + "</p>";
+		// }
+
+//setInterval(function(){
+//    var element = $(':hover');
+//    if (element.length)
+//    {
+//        var r = "";
+//        for (let i = 0; i < element.length; i++)
+//        {
+//            var domElement = element[i];
+//            var tagName = domElement.tagName;
+//            var id = domElement.id ? ' id="' + domElement.id + '"' : "";
+//            r = r + "<p>hover: &lt;" + tagName.toLowerCase() + id + "&gt;</p>";
+//        }
+//        document.getElementById('test').innerHTML = r;
+//    }
+//}, 1000);
+	</script>
+
+    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+</body>
+
+</html>
