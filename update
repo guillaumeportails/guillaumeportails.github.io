@@ -1,0 +1,26 @@
+#!/bin/bash
+#
+# Update CDT'23 in guillaumeportails.github.io
+
+dst=cdt23
+
+for f in \
+	index.html \
+	carte.js \
+	drive.js \
+	flex.css \
+	icon-camp.png \
+	icon-home.png \
+	icon-walk.png \
+	leaflet-distance-marker.css \
+	leaflet-distance-marker.js \
+	leaflet.filelayer.js \
+	leaflet.geometryutil.d.ts \
+	leaflet.geometryutil.js \
+	logo.png \
+	tracks
+do
+  mkdir -p $dst/$(dirname $f)
+  cp -r ../hikit/$f $dst
+done
+
