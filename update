@@ -9,9 +9,7 @@ for f in \
 	carte.js \
 	drive.js \
 	flex.css \
-	icon-camp.png \
-	icon-home.png \
-	icon-walk.png \
+	icon-*.png \
 	leaflet-distance-marker.css \
 	leaflet-distance-marker.js \
 	leaflet.filelayer.js \
