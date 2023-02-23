@@ -19,6 +19,11 @@ for f in \
 	tracks
 do
   mkdir -p $dst/$(dirname $f)
-  cp -r ../hikit/$f $dst
+  e=${f##*.}
+  if [[ "$e" == "js" || "$e" == "html" || "$e" == "css" ]]; then
+    minify ../hikit/$f > $dst/$f
+  else
+    cp -r ../hikit/$f $dst
+  fi
 done
 

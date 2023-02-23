@@ -1,84 +1,11 @@
-<!DOCTYPE html>
-<html lang="en-US">
-
-<head>
-	<meta charset="utf-8">
-	<meta name="viewport"
-		content="width=device-width, height=device-height, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
-	<meta name="apple-mobile-web-app-capable" content="yes">
-	<meta name="description" content="Leaflet of the USA/CDT with embedded gallery and Instagram feed">
-
-	<link rel="stylesheet" type="text/css" href="flex.css" />
-
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>		<!-- Pour CORS dans carte.js -->
-
-	<!-- Leaflet     CSS must be before JS -->
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
-			integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin="" />
-	<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
-			integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin=""></script>
-
-	<!-- Leaflet plugins     CSS then JS -->
-	<link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
-	<link rel="stylesheet" type="text/css" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
-	<script src="https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.js"></script>
-	<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
-	<script src="https://unpkg.com/togeojson@0.16.0"></script>
-	<script src="https://unpkg.com/leaflet-filelayer@1.2.0"></script>
-	<script src="https://cdn.jsdelivr.net/npm/leaflet.geodesic"></script>
-</head>
-
-
-<body style="margin:0;height:100%;overflow-y:hidden">
-
-	<!-- ======= PHOTO div -->
-	<div id="divphoto">
-		<button type="button" onclick="photoUpdate()">Show more</button>
-		<span style="float:right;">
-			<label for="autoFlyTo">auto fly to</label>
-			<input type="checkbox" id="photo:autoFlyTo" name="FlyTo">&rarr;
-		</span>
-		<pre id="photo:debug" style="white-space: pre-wrap;">DEBUGZONE</pre>
-		<div id="photo:feed" style="justify-content: center;"></div>
-		<script src="drive.js"></script>
-	</div>
-
-	<!-- ======= MAP div -->
-	<div id="divmap">
-		<p id="msgmap">Planned and actual routes</p>
-		<a id="logo" href="https://continentaldividetrail.org/" target="_blank"></a>
-		<div id="eltmap" style="width:100%; height:100%"></div>
-		<script src="carte.js"></script>
-	</div>
-
-	<!-- ======= INSTAGRAM div -->
-	<div id="divinsta"> <!-- onmousemove="toto()"> -->
-		<button onclick="tutu()">HERE</button>
-		<script src="https://cdn.lightwidget.com/widgets/lightwidget.js"></script>
-		<iframe id="igfeed" src="https://cdn.lightwidget.com/widgets/b9c78f86ff165262b3093e1cbc23bbd1.html"
-			scrolling="no" allowtransparency="true" class="lightwidget-widget"
-			style="width:100%;height:100%;border:0;overflow-x:hidden;overflow-y:auto;"></iframe>
-		<!-- "pointer-events:none;" pour capter onmousexx mais tue lightwidget -->
-		</iframe>
-	</div>
-
-	<script type="text/javascript">
-		// Parse collapsible's and collapse their sibling. When clicked, display the sibling
-		Array.prototype.forEach.call(document.getElementsByClassName("collapsible"), (e) => {
-			e.nextElementSibling.style.display = "none";
-			e.addEventListener("click", function () {
-				this.classList.toggle("active");
-				var content = this.nextElementSibling;
-				if (content.style.display === "block") {
-					content.style.display = "none";
-				} else {
-					content.style.display = "block";
-				}
-			});
-		});
-	</script>
-
-	<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
-</body>
-
-</html>
+<!doctype html><html lang=en-us><meta charset=utf-8><meta name=viewport content="width=device-width,height=device-height,initial-scale=1,maximum-scale=1,user-scalable=no,shrink-to-fit=no"><meta name=apple-mobile-web-app-capable content="yes"><meta name=description content="Leaflet of the USA/CDT with embedded gallery and Instagram feed"><link rel=stylesheet href=flex.css><script src=https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js></script>
+<link rel=stylesheet href=https://unpkg.com/leaflet@1.9.3/dist/leaflet.css integrity="sha256-kLaT2GOSpHechhsozzB+flnD+zUyjE2LlfWPgU04xyI=" crossorigin><script src=https://unpkg.com/leaflet@1.9.3/dist/leaflet.js integrity="sha256-WBkoXOwTeyKclOHuWtc+i2uENFpDZ9YPdf5Hf+D7ewM=" crossorigin></script>
+<link rel=stylesheet href=https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css><link rel=stylesheet href=https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css><script src=https://api.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.js></script>
+<script src=https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js></script>
+<script src=https://unpkg.com/togeojson@0.16.0></script>
+<script src=https://unpkg.com/leaflet-filelayer@1.2.0></script>
+<script src=https://cdn.jsdelivr.net/npm/leaflet.geodesic></script><body style=margin:0;height:100%;overflow-y:hidden><div id=divphoto><button type=button onclick=photoUpdate()>Show more</button>
+<span style=float:right><label for=autoFlyTo>auto fly to</label>
+<input type=checkbox id=photo:autoFlyTo name=FlyTo>&rarr;</span><pre id=photo:debug style=white-space:pre-wrap>DEBUGZONE</pre><div id=photo:feed style=justify-content:center></div><script src=drive.js></script></div><div id=divmap><p id=msgmap>Planned and actual routes</p><a id=logo href=https://continentaldividetrail.org/ target=_blank></a><div id=eltmap style=width:100%;height:100%></div><script src=carte.js></script></div><div id=divinsta><button onclick=tutu()>HERE</button>
+<script src=https://cdn.lightwidget.com/widgets/lightwidget.js></script>
+<iframe id=igfeed src=https://cdn.lightwidget.com/widgets/b9c78f86ff165262b3093e1cbc23bbd1.html scrolling=no allowtransparency=true class=lightwidget-widget style=width:100%;height:100%;border:0;overflow-x:hidden;overflow-y:auto></iframe></iframe></div><script>Array.prototype.forEach.call(document.getElementsByClassName("collapsible"),a=>{a.nextElementSibling.style.display="none",a.addEventListener("click",function(){this.classList.toggle("active");var a=this.nextElementSibling;a.style.display==="block"?a.style.display="none":a.style.display="block"})})</script><script async defer src=https://apis.google.com/js/api.js onload=gapiLoaded()></script>
