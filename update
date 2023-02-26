@@ -3,27 +3,33 @@
 # Update CDT'23 in guillaumeportails.github.io
 
 dst=cdt23
+src=../hikit
 
+(cd $src; ./build.sh)
+
+# Minify carte
+minify -b -o $dst/carte.js  $src/tracks/*.js $src/carte.js
+
+
+# Minify others
 for f in \
 	index.html \
-	carte.js \
 	drive.js \
 	flex.css \
 	icon-*.png \
-	leaflet-distance-marker.css \
-	leaflet-distance-marker.js \
 	leaflet.filelayer.js \
-	leaflet.geometryutil.d.ts \
-	leaflet.geometryutil.js \
-	logo.png \
-	tracks
+	logo.png
 do
   mkdir -p $dst/$(dirname $f)
   e=${f##*.}
   if [[ "$e" == "js" || "$e" == "html" || "$e" == "css" ]]; then
-    minify ../hikit/$f > $dst/$f
+    echo "Minifying $f"
+    minify $src/$f > $dst/$f
   else
-    cp -r ../hikit/$f $dst
+    echo "Copying   $f"
+    cp -r $src/$f $dst
   fi
 done
+
+ls -lR cdt23
 
