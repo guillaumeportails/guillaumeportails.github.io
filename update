@@ -8,7 +8,7 @@ src=../hikit
 (cd $src; ./build.sh)
 
 # Minify carte
-minify -b -o $dst/carte.js  $src/tracks/*.js $src/carte.js
+minify -b --js-precision 5 -o $dst/carte.js  $src/tracks/*.js $src/carte.js
 
 
 # Minify others
