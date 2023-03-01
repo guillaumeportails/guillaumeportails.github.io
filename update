@@ -8,7 +8,9 @@ src=../hikit
 (cd $src; ./build.sh)
 
 # Minify carte
-minify -b --js-precision 5 -o $dst/carte.js  $src/tracks/*.js $src/carte.js
+# + "--js-precision 5" is 5 digits, relative precision (left and right of comma)
+#   but here we want 1e-5 deg = 1m. Then $src/json2js is safer
+minify -b -o $dst/carte.js  $src/tracks/*.js $src/carte.js
 
 
 # Minify others
