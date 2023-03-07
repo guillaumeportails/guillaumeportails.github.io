@@ -8,7 +8,9 @@ src=../hikit
 (cd $src; ./build.sh)
 
 # Minify carte
-minify -b --js-precision 5 -o $dst/carte.js  $src/tracks/*.js $src/carte.js
+# "--js-precision" uses all digits, not just right of the comma
+# => awk in $src is safer
+minify -b -o $dst/carte.js  $src/tracks/*.js $src/carte.js
 
 
 # Minify others
