@@ -8,8 +8,8 @@ src=../hikit
 (cd $src; ./build.sh)
 
 # Minify carte
-# "--js-precision" uses all digits, not just right of the comma
-# => awk in $src is safer
+# + "--js-precision 5" is 5 digits, relative precision (left and right of comma)
+#   but here we want 1e-5 deg = 1m. Then $src/json2js is safer
 minify -b -o $dst/carte.js  $src/tracks/*.js $src/carte.js
 
 
