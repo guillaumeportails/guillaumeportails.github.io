@@ -20,8 +20,13 @@ for f in \
 	flex.css \
 	icon-*.png \
 	leaflet.filelayer.js \
-	logo.png
+	logo.png \
+	tracks/feed.kml
 do
+  if [ ! -f $f ]; then
+    echo "$f notfound"
+    continue
+  fi
   mkdir -p $dst/$(dirname $f)
   e=${f##*.}
   if [[ "$e" == "js" || "$e" == "html" || "$e" == "css" ]]; then
