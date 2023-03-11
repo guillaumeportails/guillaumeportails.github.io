@@ -18,13 +18,17 @@ for f in \
 	index.html \
 	drive.js \
 	flex.css \
-	icon-*.png \
+	icon-camp.png \
+	icon-cross.png \
+	icon-home.png \
+	icon-target.png \
+	icon-walk.png \
 	leaflet.filelayer.js \
 	logo.png \
 	tracks/feed.kml
 do
-  if [ ! -f $f ]; then
-    echo "$f notfound"
+  if [ ! -f $src/$f ]; then
+    echo "$src/$f notfound"
     continue
   fi
   mkdir -p $dst/$(dirname $f)
