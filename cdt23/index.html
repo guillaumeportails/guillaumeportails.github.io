@@ -4,7 +4,8 @@
 <script src=https://unpkg.com/togeojson@0.16.0></script>
 <script src=https://unpkg.com/leaflet-filelayer@1.2.0></script>
 <script src=https://cdn.jsdelivr.net/npm/leaflet.geodesic></script>
-<script src=https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js></script><body style=margin:0;height:100%;overflow-y:hidden><div id=divphoto><button type=button id=photomore onclick=photoUpdate()>Show more</button>
+<script src=https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js></script><body style=margin:0;height:100%;overflow-y:hidden><div id=divphoto><button type=button id=photomore onclick=photoUpdate(4)>Show more</button>
+<button type=button id=photoall onclick=photoUpdate(0)>All</button>
 <span style=float:right><label for=photo:autoFlyTo>auto fly to</label>
 <input type=checkbox id=photo:autoFlyTo name=FlyTo>&rarr;</span><div id=photofeed></div><div id=photobottom><p>this is the bottom</div><script src=drive.js></script></div><div id=divmap><p id=msgmap>Planned and actual routes</p><div id=eltmap style=width:100%;height:100%><a id=logo href=https://continentaldividetrail.org/ target=_blank></a></div><script src=tracks/CDG_CrazyCook.js></script>
 <script src=tracks/Places.js></script>
